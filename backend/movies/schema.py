@@ -1,7 +1,7 @@
 from urllib import request
 import graphene
 from graphene_django.types import DjangoObjectType
-from .models import Movie
+from .models import Movie, Director
 
 
 class MovieType(DjangoObjectType):
@@ -14,14 +14,23 @@ class MovieType(DjangoObjectType):
         return "Old movie" if self.year < 2000 else "New Movie"
 
 
+class DirectorType(DjangoObjectType):
+    class Meta:
+        model = Director
+
+
 class Query(graphene.ObjectType):
     all_movies = graphene.List(MovieType)
     movies = graphene.Field(
         MovieType, id=graphene.Int(), title=graphene.String()
     )
+    all_directors = graphene.List(DirectorType)
 
     def resolve_all_movies(self, info, **kwargs):
         return Movie.objects.all()
+
+    def resolve_all_directors(self, info, **kwargs):
+        return Director.objects.all()
 
     def resolve_movies(self, info, **kwargs):
         id = kwargs.get("id")
