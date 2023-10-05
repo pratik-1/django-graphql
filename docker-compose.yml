@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    volumes:
+      - ./backend:/backend
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "8000:8000"
+    stdin_open: true
+    tty: true
+    command: >
+      sh -c "python3 manage.py migrate &&
+           python3 manage.py runserver 0.0.0.0:8000"
+
+  frontend:
+    build: ./frontend
+    volumes:
+      - ./frontend:/frontend
+      # One-way volume to use node_modules from inside image
+      # - /frontend/node_modules:/frontend/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - backend
+    command: npm run start-dev
+
+volumes:
+  pgdata:
