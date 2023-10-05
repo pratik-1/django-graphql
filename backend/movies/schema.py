@@ -42,4 +42,20 @@ class Query(graphene.ObjectType):
         return None
 
 
-schema = graphene.Schema(query=Query)
+class MovieCreateMutation(graphene.Mutation):
+    class Arguments:
+        title = graphene.String(required=True)
+        year = graphene.Int(required=True)
+
+    movie = graphene.Field(MovieType)
+
+    def mutate(self, info, title, year):
+        movie = Movie.objects.create(title=title, year=year)
+        return MovieCreateMutation(movie=movie)
+
+
+class Mutation(graphene.ObjectType):
+    create_movie = MovieCreateMutation.Field()
+
+
+schema = graphene.Schema(query=Query, mutation=Mutation)
