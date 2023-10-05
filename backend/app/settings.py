@@ -40,9 +40,11 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "graphene_django",
+    "movies",
 ]
 
-GRAPHENE = {"SCHEMA": "app.schema.schema"}
+# base schema
+GRAPHENE = {"SCHEMA": "movies.schema.schema"}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
