@@ -1,7 +1,7 @@
-from urllib import request
 import graphene
 from graphene_django.types import DjangoObjectType
 from .models import Movie, Director
+from django.shortcuts import get_object_or_404
 
 
 class MovieType(DjangoObjectType):
@@ -42,4 +42,52 @@ class Query(graphene.ObjectType):
         return None
 
 
-schema = graphene.Schema(query=Query)
+class MovieCreateMutation(graphene.Mutation):
+    class Arguments:
+        title = graphene.String(required=True)
+        year = graphene.Int(required=True)
+
+    movie = graphene.Field(MovieType)
+
+    def mutate(self, info, title, year):
+        movie = Movie.objects.create(title=title, year=year)
+        return MovieCreateMutation(movie=movie)
+
+
+class MovieUpdateMutation(graphene.Mutation):
+    class Arguments:
+        title = graphene.String()
+        year = graphene.Int()
+        id = graphene.ID(required=True)
+
+    movie = graphene.Field(MovieType)
+
+    def mutate(self, info, id, **kwargs):
+        movie = get_object_or_404(Movie, pk=id)
+        if kwargs.get("title") is not None:
+            movie.title = kwargs.get("title")
+        if kwargs.get("year") is not None:
+            movie.year = kwargs.get("year")
+        movie.save()
+        return MovieUpdateMutation(movie=movie)
+
+
+class MovieDeleteMutation(graphene.Mutation):
+    class Arguments:
+        id = graphene.ID(required=True)
+
+    movie = graphene.Field(MovieType)
+
+    def mutate(self, info, id, **kwargs):
+        movie = get_object_or_404(Movie, pk=id)
+        movie.delete()
+        return MovieUpdateMutation(movie=None)
+
+
+class Mutation(graphene.ObjectType):
+    create_movie = MovieCreateMutation.Field()
+    update_movie = MovieUpdateMutation.Field()
+    delete_movie = MovieDeleteMutation.Field()
+
+
+schema = graphene.Schema(query=Query, mutation=Mutation)
