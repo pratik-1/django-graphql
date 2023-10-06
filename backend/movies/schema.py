@@ -1,4 +1,3 @@
-from urllib import request
 import graphene
 from graphene_django.types import DjangoObjectType
 from .models import Movie, Director
@@ -73,9 +72,22 @@ class MovieUpdateMutation(graphene.Mutation):
         return MovieUpdateMutation(movie=movie)
 
 
+class MovieDeleteMutation(graphene.Mutation):
+    class Arguments:
+        id = graphene.ID(required=True)
+
+    movie = graphene.Field(MovieType)
+
+    def mutate(self, info, id, **kwargs):
+        movie = get_object_or_404(Movie, pk=id)
+        movie.delete()
+        return MovieUpdateMutation(movie=None)
+
+
 class Mutation(graphene.ObjectType):
     create_movie = MovieCreateMutation.Field()
     update_movie = MovieUpdateMutation.Field()
+    delete_movie = MovieDeleteMutation.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
