@@ -26,5 +26,11 @@ This app include 2 services:
 ![named query with directives](https://github.com/pratik-1/django-graphql/assets/37976329/f8ec0e38-f817-437a-a05b-9eb9a6c3c419)
 
 
+## Generate schema
+Graphql schema can be superuseful to understand what operations are available to perform. If operations are modified regenerate the schema using the below command
+```
+python3 manage.py graphql_schema <optional path>
+```
+
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
