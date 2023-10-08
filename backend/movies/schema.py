@@ -6,6 +6,7 @@ from graphene_django.types import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
 from .models import Movie, Director
 from django.shortcuts import get_object_or_404
+from graphql_relay import from_global_id
 
 
 class MovieType(DjangoObjectType):
@@ -93,6 +94,26 @@ class MovieUpdateMutation(graphene.Mutation):
         return MovieUpdateMutation(movie=movie)
 
 
+# Relay mutation
+class MovieUpdateMutationRelay(relay.ClientIDMutation):
+    class Input:
+        title = graphene.String()
+        year = graphene.Int()
+        id = graphene.ID(required=True)
+
+    movie = graphene.Field(MovieType)
+
+    @classmethod
+    def mutate_and_get_payload(cls, root, info, id, **kwargs):
+        movie = get_object_or_404(Movie, pk=from_global_id(id)[1])
+        if kwargs.get("title") is not None:
+            movie.title = kwargs.get("title")
+        if kwargs.get("year") is not None:
+            movie.year = kwargs.get("year")
+        movie.save()
+        return MovieUpdateMutationRelay(movie=movie)
+
+
 class MovieDeleteMutation(graphene.Mutation):
     class Arguments:
         id = graphene.ID(required=True)
@@ -111,6 +132,7 @@ class Mutation(graphene.ObjectType):
 
     create_movie = MovieCreateMutation.Field()
     update_movie = MovieUpdateMutation.Field()
+    update_movie_relay = MovieUpdateMutationRelay.Field()
     delete_movie = MovieDeleteMutation.Field()
 
 
