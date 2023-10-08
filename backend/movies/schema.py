@@ -1,7 +1,9 @@
 import graphene
 import graphql_jwt
+from graphene import relay
 from graphql_jwt.decorators import login_required
 from graphene_django.types import DjangoObjectType
+from graphene_django.filter import DjangoFilterConnectionField
 from .models import Movie, Director
 from django.shortcuts import get_object_or_404
 
@@ -16,21 +18,30 @@ class MovieType(DjangoObjectType):
         return "Old movie" if self.year < 2000 else "New Movie"
 
 
+# Relay implementation
+class MovieNode(DjangoObjectType):
+    class Meta:
+        model = Movie
+        filter_fields = ["title", "year"]
+        interfaces = (relay.Node,)
+
+
 class DirectorType(DjangoObjectType):
     class Meta:
         model = Director
 
 
 class Query(graphene.ObjectType):
-    all_movies = graphene.List(MovieType)
+    # all_movies = graphene.List(MovieType)
+    all_movies = DjangoFilterConnectionField(MovieNode)
     movies = graphene.Field(
         MovieType, id=graphene.Int(), title=graphene.String()
     )
     all_directors = graphene.List(DirectorType)
 
-    @login_required
-    def resolve_all_movies(self, info, **kwargs):
-        return Movie.objects.all()
+    # @login_required
+    # def resolve_all_movies(self, info, **kwargs):
+    #     return Movie.objects.all()
 
     def resolve_all_directors(self, info, **kwargs):
         return Director.objects.all()
