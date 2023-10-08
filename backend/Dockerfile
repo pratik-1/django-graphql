@@ -15,10 +15,11 @@ RUN pip install -U pip
 RUN pip install psycopg2
 
 
-COPY ./requirements /requirements
-RUN pip install --no-cache-dir -r requirements/dev.txt
-
+COPY data/ data/
 WORKDIR /backend
 COPY . /backend
+
+RUN pip install --no-cache-dir -r requirements/dev.txt
+
 
 CMD python3 manage.py runserver 0.0.0.0:8000

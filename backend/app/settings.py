@@ -47,6 +47,7 @@ INSTALLED_APPS = [
 # base schema
 GRAPHENE = {
     "SCHEMA": "movies.schema.schema",
+    "SCHEMA_OUTPUT": "data/graphql_schema.json",
     "MIDDLEWARE": [
         "graphql_jwt.middleware.JSONWebTokenMiddleware",
     ],

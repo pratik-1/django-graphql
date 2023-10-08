@@ -1,9 +1,12 @@
 import graphene
 import graphql_jwt
+from graphene import relay
 from graphql_jwt.decorators import login_required
 from graphene_django.types import DjangoObjectType
+from graphene_django.filter import DjangoFilterConnectionField
 from .models import Movie, Director
 from django.shortcuts import get_object_or_404
+from graphql_relay import from_global_id
 
 
 class MovieType(DjangoObjectType):
@@ -16,33 +19,49 @@ class MovieType(DjangoObjectType):
         return "Old movie" if self.year < 2000 else "New Movie"
 
 
+# Relay implementation
+class MovieNode(DjangoObjectType):
+    class Meta:
+        model = Movie
+        filter_fields = {
+            "title": ["exact", "icontains", "istartswith"],
+            "year": [
+                "exact",
+            ],
+        }
+        interfaces = (relay.Node,)
+
+
 class DirectorType(DjangoObjectType):
     class Meta:
         model = Director
 
 
 class Query(graphene.ObjectType):
-    all_movies = graphene.List(MovieType)
-    movies = graphene.Field(
-        MovieType, id=graphene.Int(), title=graphene.String()
-    )
+    # all_movies = graphene.List(MovieType)
+    all_movies = DjangoFilterConnectionField(MovieNode)
+    # movies = graphene.Field(
+    #     MovieType, id=graphene.Int(), title=graphene.String()
+    # )
+    movies = relay.Node.Field(MovieNode)
+
     all_directors = graphene.List(DirectorType)
 
-    @login_required
-    def resolve_all_movies(self, info, **kwargs):
-        return Movie.objects.all()
+    # @login_required
+    # def resolve_all_movies(self, info, **kwargs):
+    #     return Movie.objects.all()
 
     def resolve_all_directors(self, info, **kwargs):
         return Director.objects.all()
 
-    def resolve_movies(self, info, **kwargs):
-        id = kwargs.get("id")
-        title = kwargs.get("title")
-        if id is not None:
-            return Movie.objects.get(pk=id)
-        if title is not None:
-            return Movie.objects.get(title=title)
-        return None
+    # def resolve_movies(self, info, **kwargs):
+    #     id = kwargs.get("id")
+    #     title = kwargs.get("title")
+    #     if id is not None:
+    #         return Movie.objects.get(pk=id)
+    #     if title is not None:
+    #         return Movie.objects.get(title=title)
+    #     return None
 
 
 class MovieCreateMutation(graphene.Mutation):
@@ -75,6 +94,26 @@ class MovieUpdateMutation(graphene.Mutation):
         return MovieUpdateMutation(movie=movie)
 
 
+# Relay mutation
+class MovieUpdateMutationRelay(relay.ClientIDMutation):
+    class Input:
+        title = graphene.String()
+        year = graphene.Int()
+        id = graphene.ID(required=True)
+
+    movie = graphene.Field(MovieType)
+
+    @classmethod
+    def mutate_and_get_payload(cls, root, info, id, **kwargs):
+        movie = get_object_or_404(Movie, pk=from_global_id(id)[1])
+        if kwargs.get("title") is not None:
+            movie.title = kwargs.get("title")
+        if kwargs.get("year") is not None:
+            movie.year = kwargs.get("year")
+        movie.save()
+        return MovieUpdateMutationRelay(movie=movie)
+
+
 class MovieDeleteMutation(graphene.Mutation):
     class Arguments:
         id = graphene.ID(required=True)
@@ -93,6 +132,7 @@ class Mutation(graphene.ObjectType):
 
     create_movie = MovieCreateMutation.Field()
     update_movie = MovieUpdateMutation.Field()
+    update_movie_relay = MovieUpdateMutationRelay.Field()
     delete_movie = MovieDeleteMutation.Field()
 
 
