@@ -10,8 +10,6 @@ COPY src src
 
 COPY public public
 
-COPY .env .env
-
 RUN npm -g install npm@latest --silent
 
 EXPOSE 3000
